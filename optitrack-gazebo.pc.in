@@ -1,0 +1,9 @@
+# pkg-config file for optitrack-gazebo
+#
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+
+Name: optitrack-gazebo
+Description: Optitrack motion capture simulator plugin for gazebo
+Version: @PACKAGE_VERSION@

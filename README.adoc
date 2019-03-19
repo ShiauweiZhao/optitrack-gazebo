@@ -1,0 +1,137 @@
+//
+// Copyright (c) 2019 LAAS/CNRS
+// All rights reserved.
+//
+// Redistribution  and  use  in  source  and binary  forms,  with  or  without
+// modification, are permitted provided that the following conditions are met:
+//
+//   1. Redistributions of  source  code must retain the  above copyright
+//      notice and this list of conditions.
+//   2. Redistributions in binary form must reproduce the above copyright
+//      notice and  this list of  conditions in the  documentation and/or
+//      other materials provided with the distribution.
+//
+// THE SOFTWARE  IS PROVIDED "AS IS"  AND THE AUTHOR  DISCLAIMS ALL WARRANTIES
+// WITH  REGARD   TO  THIS  SOFTWARE  INCLUDING  ALL   IMPLIED  WARRANTIES  OF
+// MERCHANTABILITY AND  FITNESS.  IN NO EVENT  SHALL THE AUTHOR  BE LIABLE FOR
+// ANY  SPECIAL, DIRECT,  INDIRECT, OR  CONSEQUENTIAL DAMAGES  OR  ANY DAMAGES
+// WHATSOEVER  RESULTING FROM  LOSS OF  USE, DATA  OR PROFITS,  WHETHER  IN AN
+// ACTION OF CONTRACT, NEGLIGENCE OR  OTHER TORTIOUS ACTION, ARISING OUT OF OR
+// IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+//                                           Anthony Mallet on Tue Mar 19 2019
+//
+
+= optitrack-gazebo
+openrobots@laas.fr
+:toc: left
+
+// fix default asciidoctor stylesheet issue #2407 and add hr clear rule
+ifdef::backend-html5[]
+[pass]
+++++
+<link rel="stylesheet" href="data:text/css,p{font-size: inherit !important}" >
+<link rel="stylesheet" href="data:text/css,hr{clear: both}" >
+++++
+endif::[]
+
+`optitrack-gazebo` is a http://gazebosim.org/[gazebo] plugin that emulates an
+https://www.optitrack.com/[OptiTrack Motion Capture system]. It streams live a
+configurable subset of links pose as computed by the gazebo simulator. The
+streaming protocol is compatible with the
+https://optitrack.com/products/natnet-sdk/[NatNet 2.9 format] of OptiTrack.
+
+
+== Installation
+
+After configuring, compiling and installing the software in the `$PREFIX`
+folder, the plugin can be found in the
+`$PREFIX/lib/gazebo/optitrack-gazebo.so`. To load it from gazebo, an option is
+to configure the environment variable `GAZEBO_PLUGIN_PATH` so that it contains
+this directory. For instance:
+
+[source,shell]
+----
+% export GAZEBO_PLUGIN_PATH=$PREFIX/lib/gazebo:${GAZEBO_PLUGIN_PATH}
+----
+
+`optitrack-gazebo` is a World plugin. A sample SDF file to use it would look
+like this:
+
+[source,xml]
+----
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="default">
+    <plugin name="optitrack" filename="optitrack-gazebo.so">
+      <!-- configuration options goes here -->
+    </plugin>
+  </world>
+</sdf>
+----
+
+
+== Configuration
+
+=== Published links
+
+The list of links to be published is defined by the `publish` SDF element in
+the plugin configuration section. Each `publish` element must contain a
+sub-element `link` with the name of the link to publish.
+
+An optional `offset` element, containing a 6-tuple, may define a `x, y, z,
+roll, pitch, yaw` offset to the published position, in the link frame.
+
+Links are published with their full scoped names. An optional `<name>` element
+can be used to assign a different or shorter name to the published data.
+
+[source,xml]
+----
+<plugin name="optitrack" filename="optitrack-gazebo.so">
+  <publish>
+    <link>ground_plane::link</link> <!-- 0 offset and full name -->
+  </publish>
+  <publish>
+    <link>box::link</link>
+    <name>box</name> <!-- shorter name -->
+    <offset>0 0 0.5 0 0 0</offset>  <!-- offset by 0.5m on Z -->
+  </publish>
+</plugin>
+----
+
+=== Artificial noise
+
+Without option, the streamed poses are exact and associated with a mean average
+error of 10^-4^m (0.1mm). Random Gaussian noise can be added with the `<noise>`
+tag containing the desired noise standard deviation:
+
+[source,xml]
+----
+<plugin name="optitrack" filename="optitrack-gazebo.so">
+  <noise>0.03</noise>
+</plugin>
+----
+
+=== Streaming frequency
+
+The streaming frequency defaults to 100Hz. Specify a different frequency with
+the `<hz>` tag:
+
+[source,xml]
+----
+<plugin name="optitrack" filename="optitrack-gazebo.so">
+  <hz>50</hz>
+</plugin>
+----
+
+=== Network options
+
+Data is streamed on UDP unicast, port 1509 by default. The port can be changed
+with the `<port>` tag:
+
+[source,xml]
+----
+<plugin name="optitrack" filename="optitrack-gazebo.so">
+  <port>1510</port>
+</plugin>
+----
